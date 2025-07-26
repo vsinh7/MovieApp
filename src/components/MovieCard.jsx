@@ -1,9 +1,11 @@
-
-
 function MovieCard({movie}) {
 
-    function onFavoriteClick(){
-         alert("clicked");
+    // function onFavoriteClick(){
+    //      alert("clicked");
+    // }
+
+    const onFavoriteClick = () =>{
+        alert("clicked");
     }
 
   return (
