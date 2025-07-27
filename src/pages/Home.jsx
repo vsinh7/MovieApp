@@ -1,21 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import MovieCard from "../components/MovieCard";
+import { getPopularMovies, SearchMovies } from "../services/api";
+import "../css/Home.css";
 
 function Home() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [movies, setMovies] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const movies = [
-    { id: 1, title: "Myra's Movie", release_date: "2021" },
-    { id: 2, title: "Vidya's Movie", release_date: "1990" },
-    { id: 3, title: "Ankita's Movie", release_date: "1992" },
-    { id: 4, title: "Matrix's Movie", release_date: "1999" },
-  ];
+  // Track previous value of searchQuery
+  const prevSearchQuery = useRef("");
 
-  const handleSearch = (e) => {
+  useEffect(() => {
+    const loadPopularMovies = async () => {
+      try {
+        const popularMovies = await getPopularMovies();
+        setMovies(popularMovies);
+      } catch (err) {
+        console.log("Error is", err);
+        setError("Failed to load movies .....");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPopularMovies();
+  }, []);
+
+
+   // Detect manual clear of search input to reload the page
+   useEffect(() => {
+    if (prevSearchQuery.current !== "" && searchQuery === "") {
+      window.location.reload();
+    }
+    prevSearchQuery.current = searchQuery;
+  }, [searchQuery]);
+
+  const handleSearch = async (e) => {
     e.preventDefault();
-    alert(searchQuery);
-    setSearchQuery("");
+    if (!searchQuery.trim()) return; 
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const searchResults = await SearchMovies(searchQuery);
+      setMovies(searchResults);
+      setLoading(false);
+    } catch (err) {
+      console.log("error is...", err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+
 
   return (
     <div className="home">
@@ -33,12 +71,18 @@ function Home() {
         </button>
       </form>
 
-      <div className="movies-grid">
-        {movies.map((movie) => 
-       //movie.title.toLowerCase().startsWith(searchQuery) &&  (<MovieCard movie={movie} key={movies.id} />
-            (<MovieCard movie={movie} key={movies.id} />
-        ))}
-      </div>
+      {error && <div className="error">{error}</div>}
+
+      {loading ? (
+        <div className="loading">Loading....</div>
+      ) : (
+        <div className="movies-grid">
+          {movies.map((movie) => (
+            //movie.title.toLowerCase().startsWith(searchQuery) &&  (<MovieCard movie={movie} key={movies.id} />
+            <MovieCard movie={movie} key={movies.id} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
